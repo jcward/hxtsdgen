@@ -10,6 +10,7 @@ enum ExposeKind {
     EEnum(c:ClassType);
     ETypedef(t:DefType, anon:AnonType);
     EMethod(c:ClassType, cf:ClassField);
+    EEnumArray(et:EnumType);
 }
 
 class Generator {

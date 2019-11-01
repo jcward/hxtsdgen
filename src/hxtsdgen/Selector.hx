@@ -93,6 +93,14 @@ class Selector {
                     }
                     return true;
                 }
+            case [TEnum(_.get() => et, params), _]:
+                var key = et.pack.join('.') + '.' + et.name;
+                if (!autoIncluded.exists(key)) {
+                    autoIncluded.set(key, true);
+                    onAutoInclude([EEnumArray(et)]);
+                }
+                return true;
+
             default:
         }
         return false;

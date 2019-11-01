@@ -49,6 +49,8 @@ class CodeGen {
                     dtsDecl.push(generateTypedefDeclaration(t, anon, true));
                 case EMethod(cl, f):
                     dtsDecl.push(generateFunctionDeclaration(cl, true, f));
+                case EEnumArray(et):
+                    dtsDecl.push(generateEnumArrayDeclaration(et));
             }
         }
     }
@@ -252,6 +254,56 @@ class CodeGen {
             }
 
             parts.push('$indent}');
+            return parts.join("\n");
+        });
+    }
+
+    function generateEnumArrayDeclaration(et:EnumType, isExport=true /* ? */):String {
+        var exposePath = getExposePath(et.meta);
+        if (exposePath == null)
+            exposePath = et.pack.concat([et.name]);
+
+        return wrapInNamespace(exposePath, function(name, indent) {
+            var parts = [];
+
+            if (et.doc != null)
+                parts.push(renderDoc(et.doc, indent));
+
+            var tparams = renderTypeParams(et.params);
+            var export = isExport ? "export " : "";
+            parts.push('$indent${export}type $name$tparams =');
+
+            var consts = [];
+            for (c in et.constructs) {
+                var val = '$indent[ \'${ c.name }\', number';
+                switch c.type {
+                    case TFun(args, _):
+                        for (arg in args) val += ', /* ${ arg.name } */${ renderType(selector, arg.t) }';
+                    default:
+                  }
+                val += ' ]';
+                consts.push(val);
+            }
+
+            var code = indent + "\t" + consts.join(' |\n${ indent }\t');
+
+            // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            // Grr: recursive types are not allowed until PR 33050
+            // - https://github.com/microsoft/TypeScript/issues/6230
+            // - https://github.com/microsoft/TypeScript/pull/33050
+            // This ugly and terrible hack I need for recursive Promise<Foo>
+            var suffix = '';
+            var fqname = exposePath.join('.')+'.'+name;
+            var p = 'Promise<$fqname>';
+            if (code.indexOf(p)>=0) {
+              var intf = 'PromiseOf${ StringTools.replace(fqname, ".", "_") }';
+              code = StringTools.replace(code, p, intf);
+              suffix = '\n${indent}interface $intf extends Promise<$fqname> {}\n';
+            }
+            // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            parts.push(code);
+
+            parts.push('$indent$suffix');
             return parts.join("\n");
         });
     }

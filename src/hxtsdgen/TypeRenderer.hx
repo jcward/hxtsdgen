@@ -83,6 +83,10 @@ class TypeRenderer {
             case TDynamic(elemT):
                 '{ [key: string]: ${renderType(ctx, elemT)} }';
 
+            case TEnum(et, params):
+                ctx.ensureIncluded(t);
+                formatName(ctx, et.get(), params);
+
             default:
                 throw 'Cannot render type ${t.toString()} into a TypeScript declaration (TODO?)';
         }
