@@ -10,10 +10,10 @@ class Selector {
     public var exposed:Array<ExposeKind>;
     public var onAutoInclude:Array<ExposeKind> -> Void;
 
-    var autoIncluded:Map<String, Bool>;
+    var isIncluded:Map<String, Bool>;
 
     public function new() {
-        autoIncluded = new Map<String, Bool>();
+        isIncluded = new Map<String, Bool>();
     }
 
     public function getExposed(types:Array<Type>) {
@@ -39,9 +39,9 @@ class Selector {
 
     function exposeClass(cl:ClassType, autoInclude = false) {
         if (autoInclude) {
-            if (autoIncluded.exists(cl.name)) return;
-            autoIncluded.set(cl.name, true);
+            if (isIncluded.exists(cl.name)) return;
         }
+        isIncluded.set(cl.name, true);
 
         if (autoInclude || cl.meta.has(":expose")) {
             if (cl.interfaces != null && cl.interfaces.length > 0) {
@@ -71,15 +71,15 @@ class Selector {
         switch [t, t.follow()] {
             case [_, TInst(_.get() => cl, _)] if (!cl.isExtern && !cl.meta.has(":expose")):
                 var key = cl.pack.join('.') + '.' + cl.name;
-                if (!autoIncluded.exists(key)) {
-                    autoIncluded.set(key, true);
+                if (!isIncluded.exists(key)) {
+                    isIncluded.set(key, true);
                     onAutoInclude([EClass(cl)]);
                 }
                 return true;
             case [TType(_.get() => tt, _), TAnonymous(_.get() => anon)] if (!tt.meta.has(":expose")):
                 var key = tt.pack.join('.') + '.' + tt.name;
-                if (!autoIncluded.exists(key)) {
-                    autoIncluded.set(key, true);
+                if (!isIncluded.exists(key)) {
+                    isIncluded.set(key, true);
                     onAutoInclude([ETypedef(tt, anon)]);
                 }
                 return true;
@@ -87,16 +87,16 @@ class Selector {
                 var cl = ab.impl.get();
                 if (cl.meta.has(':enum')) {
                     var key = cl.pack.join('.') + '.' + cl.name;
-                    if (!autoIncluded.exists(key)) {
-                        autoIncluded.set(key, true);
+                    if (!isIncluded.exists(key)) {
+                        isIncluded.set(key, true);
                         onAutoInclude([EEnum(cl)]);
                     }
                     return true;
                 }
             case [TEnum(_.get() => et, params), _]:
                 var key = et.pack.join('.') + '.' + et.name;
-                if (!autoIncluded.exists(key)) {
-                    autoIncluded.set(key, true);
+                if (!isIncluded.exists(key)) {
+                    isIncluded.set(key, true);
                     onAutoInclude([EEnumArray(et)]);
                 }
                 return true;
