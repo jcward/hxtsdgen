@@ -415,6 +415,7 @@ class CodeGen {
     function isNullable(field:ClassField) {
         return switch (field.type) {
             case TType(_.get() => _.name => 'Null', _): true;
+            case TAbstract(_.get() => _.name => 'Null', _): true; // Hmm, not sure why this wasn't here, typedef optional fields need ?
             default: false;
         }
     }
